@@ -15,37 +15,69 @@
             --related-bg: rgba(99, 102, 241, 0.12); 
             --same-num-bg: rgba(99, 102, 241, 0.4); 
             --success-bg: rgba(34, 197, 94, 0.5);
-            --gold-glow: linear-gradient(135deg, #fef08a 0%, #eab308 50%, #a16207 100%);
             --thick: 3px; 
+            /* 動態計算棋盤大小，避免遮蔽 */
+            --board-size: min(90vw, 450px);
         }
-        body { -webkit-tap-highlight-color: transparent; background: #f8fafc; overflow-x: hidden; user-select: none; touch-action: manipulation; transition: background 0.3s; font-family: system-ui, -apple-system, sans-serif; }
+        
+        /* 手機適配核心：使用 svh 處理工具列遮擋問題 */
+        body { 
+            -webkit-tap-highlight-color: transparent; 
+            background: #f8fafc; 
+            overflow: hidden; 
+            user-select: none; 
+            touch-action: none; 
+            transition: background 0.3s; 
+            font-family: system-ui, -apple-system, sans-serif;
+            height: 100svh;
+            display: flex;
+            flex-direction: column;
+        }
         html.dark body { background: #0f172a; color: #f1f5f9; }
 
+        .app-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
+            overflow: hidden;
+        }
+
         /* 導航左右拖曳模式 */
-        .nav-container { width: 100%; overflow-x: auto; cursor: grab; scrollbar-width: none; touch-action: pan-x; padding: 12px 0; -webkit-overflow-scrolling: touch; }
+        .nav-container { flex-shrink: 0; width: 100%; overflow-x: auto; cursor: grab; scrollbar-width: none; touch-action: pan-x; padding: 8px 0; -webkit-overflow-scrolling: touch; }
         .nav-container::-webkit-scrollbar { display: none; }
-        .mode-btn { flex: 0 0 auto; border-radius: 1rem; padding: 8px 18px; border: 2px solid transparent; background: white; font-weight: 800; font-size: 0.85rem; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); white-space: nowrap; }
+        .mode-btn { flex: 0 0 auto; border-radius: 1rem; padding: 6px 14px; border: 2px solid transparent; background: white; font-weight: 800; font-size: 0.8rem; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); white-space: nowrap; }
         html.dark .mode-btn { background: #1e293b; color: #94a3b8; }
         .mode-btn.active-tab { border-color: var(--theme-color); color: var(--theme-color); background: var(--theme-bg); transform: scale(1.05); }
 
-        /* 數獨棋盤基礎結構 */
-        #game-outer-container { position: relative; width: 100%; max-width: 480px; aspect-ratio: 1/1; margin: 0 auto; padding: 4px; background: #475569; border-radius: 14px; }
+        /* 數獨棋盤基礎結構 - 響應式高度優化 */
+        #game-outer-container { 
+            flex-shrink: 0;
+            position: relative; 
+            width: var(--board-size);
+            height: var(--board-size);
+            margin: 4px auto;
+            padding: 4px; 
+            background: #475569; 
+            border-radius: 14px; 
+        }
         .sudoku-grid { display: grid; grid-template-columns: repeat(9, 1fr); width: 100%; height: 100%; position: relative; background: white; border-radius: 8px; overflow: hidden; }
         html.dark .sudoku-grid { background: #1e293b; }
 
-        /* 特效畫布 */
+        /* 特效層 */
         #effect-canvas { position: absolute; inset: 0; pointer-events: none; z-index: 100; }
         .draw-line { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: draw 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards, fadeout 0.4s 0.6s forwards; }
         @keyframes draw { to { stroke-dashoffset: 0; } }
         @keyframes fadeout { from { opacity: 1; } to { opacity: 0; } }
 
-        /* 格子基礎樣式 */
-        .cell { position: relative; border: 0.5px solid #e2e8f0; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: transparent; cursor: pointer; z-index: 10; transition: all 0.2s ease; }
+        .cell { position: relative; border: 0.5px solid #e2e8f0; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: transparent; cursor: pointer; z-index: 10; transition: all 0.1s ease; }
         html.dark .cell { border-color: #334155; }
         .cell.border-r-thick { border-right-width: var(--thick) !important; border-right-color: #475569 !important; }
         .cell.border-b-thick { border-bottom-width: var(--thick) !important; border-bottom-color: #475569 !important; }
 
-        /* 金色發亮特效 (九宮格) */
         .cell.cell-gold-flash { animation: gold-pulse 1s ease-out forwards; z-index: 60; }
         @keyframes gold-pulse {
             0% { background: white; box-shadow: inset 0 0 0 0px #eab308; }
@@ -53,7 +85,6 @@
             100% { background: transparent; transform: scale(1); }
         }
 
-        /* 通關全區域發亮 */
         .cell.cell-win-flash { animation: win-glow 1s ease-in-out forwards; z-index: 80; }
         @keyframes win-glow {
             0% { filter: brightness(1); }
@@ -61,57 +92,58 @@
             100% { background: var(--success-bg); filter: brightness(1); }
         }
 
-        /* 高亮邏輯 */
         .cell.cell-related { background-color: var(--related-bg) !important; }
         .cell.cell-same-num { background-color: var(--same-num-bg) !important; z-index: 15; }
         .cell.cell-selected { background-color: var(--theme-bg) !important; box-shadow: inset 0 0 0 3px var(--theme-color); z-index: 40; }
         
-        /* 殺手數獨樣式 */
+        /* 殺手數獨樣式 - 確保 z-index 不衝突 */
         .cage-fill { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
         .cage-border-segment { position: absolute; inset: 2px; border: 0px dashed rgba(0,0,0,0.5); z-index: 2; pointer-events: none; }
         html.dark .cage-border-segment { border-color: rgba(255,255,255,0.4); }
-        .cage-sum { position: absolute; top: 1px; left: 3px; font-size: 10px; font-weight: 900; z-index: 50; pointer-events: none; color: #000; text-shadow: 0px 0px 3px rgba(255,255,255,1); }
+        .cage-sum { position: absolute; top: 1px; left: 3px; font-size: 8px; font-weight: 900; z-index: 50; pointer-events: none; color: #000; text-shadow: 0px 0px 3px rgba(255,255,255,1); }
         html.dark .cage-sum { color: #fff; text-shadow: 0px 0px 3px rgba(0,0,0,1); }
 
-        /* 數字樣式 */
-        .digit { font-size: 1.8rem; font-weight: 900; z-index: 25; pointer-events: none; }
+        .digit { font-size: 1.5rem; font-weight: 900; z-index: 25; pointer-events: none; }
+        @media (max-width: 400px) { .digit { font-size: 1.2rem; } }
+        
         .fixed-text .digit { color: #0f172a; } 
         html.dark .fixed-text .digit { color: #ffffff; } 
         .input-text .digit { color: #4f46e5; } 
         html.dark .input-text .digit { color: #a5b4fc; } 
         .error-text .digit { color: #ef4444 !important; } 
 
-        .notes-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); padding: 2px; font-size: 8px; color: #1e293b; pointer-events: none; z-index: 20; }
+        .notes-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); padding: 1px; font-size: 7px; color: #1e293b; pointer-events: none; z-index: 20; }
         html.dark .notes-grid { color: #f1f5f9; }
 
-        .num-btn { height: 58px; border-radius: 14px; background: white; font-weight: 900; font-size: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.2s; }
+        .control-area { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 8px; min-height: 0; padding-bottom: 8px; }
+        .num-btn { flex: 1; aspect-ratio: 1/1; max-height: 50px; border-radius: 12px; background: white; font-weight: 900; font-size: 1.2rem; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.2s; }
         html.dark .num-btn { background: #1e293b; border-color: #334155; color: white; }
-        .num-btn.active-num { background: var(--theme-color) !important; color: white !important; transform: scale(1.1); }
-        .num-btn.num-completed { visibility: hidden; opacity: 0; pointer-events: none; transform: scale(0.5); }
+        .num-btn.active-num { background: var(--theme-color) !important; color: white !important; transform: scale(1.05); }
+        .num-btn.num-completed { opacity: 0.2; pointer-events: none; transform: scale(0.9); }
 
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); }
         .modal.active { opacity: 1; pointer-events: auto; }
     </style>
 </head>
-<body class="flex flex-col items-center p-4">
+<body>
 
-    <div class="w-full max-w-lg">
-        <header class="flex justify-between items-center mb-4">
-            <button onclick="toggleHelp()" class="p-3 bg-white dark:bg-slate-800 rounded-xl border shadow-sm">📖</button>
+    <div class="app-wrapper">
+        <header class="flex justify-between items-center py-2 flex-shrink-0">
+            <button onclick="toggleHelp()" class="p-2 bg-white dark:bg-slate-800 rounded-xl border shadow-sm">📖</button>
             <div class="text-center">
-                <span id="mode-title" class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Classic</span>
-                <h1 class="text-xl font-black dark:text-white uppercase">Sudoku Master</h1>
+                <span id="mode-title" class="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Classic</span>
+                <h1 class="text-lg font-black dark:text-white uppercase leading-none">Sudoku Pro</h1>
             </div>
-            <button onclick="toggleTheme()" class="p-3 bg-white dark:bg-slate-800 rounded-xl border shadow-sm">🌙</button>
+            <button onclick="toggleTheme()" class="p-2 bg-white dark:bg-slate-800 rounded-xl border shadow-sm">🌙</button>
         </header>
 
-        <div class="flex justify-between px-4 mb-3 text-sm font-bold">
-            <div id="hearts" class="flex gap-1 text-red-500 text-lg">❤️❤️❤️</div>
-            <div id="timer" class="font-mono bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full text-slate-600 dark:text-slate-300">00:00</div>
+        <div class="flex justify-between items-center mb-1 flex-shrink-0">
+            <div id="hearts" class="flex gap-1 text-red-500 text-base">❤️❤️❤️</div>
+            <div id="timer" class="font-mono bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full text-xs text-slate-600 dark:text-slate-300">00:00</div>
         </div>
 
         <div class="nav-container" id="nav-wrapper">
-            <nav id="mode-list" class="flex gap-2 px-4 w-max"></nav>
+            <nav id="mode-list" class="flex gap-2 px-2 w-max"></nav>
         </div>
 
         <div id="game-outer-container">
@@ -119,22 +151,25 @@
             <svg id="effect-canvas" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 mt-4">
-            <button id="note-btn" onclick="toggleNote()" class="relative h-14 rounded-2xl bg-white dark:bg-slate-800 border-2 border-transparent font-bold dark:text-white shadow-sm overflow-hidden">
-                <div id="note-bg" class="absolute inset-0 bg-indigo-500/10 -translate-x-full transition-transform"></div>
-                <span class="relative">✏️ 筆記: <span id="note-label">OFF</span></span>
-            </button>
-            <button onclick="handleInput(0)" class="h-14 rounded-2xl bg-white dark:bg-slate-800 border font-bold dark:text-white shadow-sm">🧹 橡皮擦</button>
-        </div>
+        <div class="control-area">
+            <div class="grid grid-cols-2 gap-2">
+                <button id="note-btn" onclick="toggleNote()" class="relative py-3 rounded-xl bg-white dark:bg-slate-800 border-2 border-transparent font-bold text-sm dark:text-white shadow-sm overflow-hidden">
+                    <div id="note-bg" class="absolute inset-0 bg-indigo-500/10 -translate-x-full transition-transform"></div>
+                    <span class="relative">✏️ 筆記: <span id="note-label">OFF</span></span>
+                </button>
+                <button onclick="handleInput(0)" class="py-3 rounded-xl bg-white dark:bg-slate-800 border font-bold text-sm dark:text-white shadow-sm">🧹 橡皮擦</button>
+            </div>
 
-        <div id="numpad" class="grid grid-cols-5 gap-2 mt-4"></div>
+            <div id="numpad" class="flex justify-between gap-1"></div>
 
-        <div class="flex gap-4 mt-6">
-            <button onclick="initGame()" class="flex-1 py-4 bg-slate-200 dark:bg-slate-700 rounded-2xl font-bold text-xs uppercase">重新開始</button>
-            <button onclick="getHint()" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg">獲得提示 (<span id="hint-count">3</span>)</button>
+            <div class="flex gap-2">
+                <button onclick="initGame()" class="flex-1 py-3 bg-slate-200 dark:bg-slate-700 rounded-xl font-bold text-[10px] uppercase">重開</button>
+                <button onclick="getHint()" class="flex-[3] py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-lg">獲得提示 (<span id="hint-count">3</span>)</button>
+            </div>
         </div>
     </div>
 
+    <!-- Modals -->
     <div id="help-modal" class="modal">
         <div class="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-xs p-6 mx-4">
             <h3 class="text-xl font-black mb-2 dark:text-white text-center" id="help-title">模式規則</h3>
@@ -214,7 +249,7 @@
             const p = document.getElementById('diff-panel'); p.classList.replace('hidden', 'flex');
             const bts = document.getElementById('diff-buttons'); bts.innerHTML = '';
             ["入門", "簡單", "中等", "困難", "大師"].forEach((l, i) => {
-                const b = document.createElement('button'); b.className = "p-4 rounded-2xl bg-slate-100 dark:bg-slate-700 font-bold dark:text-white";
+                const b = document.createElement('button'); b.className = "p-3 rounded-2xl bg-slate-100 dark:bg-slate-700 font-bold dark:text-white";
                 b.innerText = l; b.onclick = () => { currentDiff=i; currentMode=pendingMode; p.classList.replace('flex', 'hidden'); initGame(); };
                 bts.appendChild(b);
             });
@@ -225,7 +260,7 @@
             timer=0; errors=0; selectedIdx=-1; isOver=false; hintLeft=3; activeNum=null;
             completedLines = { r:[], c:[], b:[], d:[] };
             const sol = Engine.generate();
-            const rates = [0.25, 0.4, 0.55, 0.7, 0.85];
+            const rates = [0.2, 0.35, 0.5, 0.65, 0.8];
             gridData = sol.map(s => ({ val: 0, sol: s, fixed: false, notes: [], cageId: -1, isError: false, isGold: false }));
             for(let i=0; i<81; i++) if(Math.random() > rates[currentDiff]) { gridData[i].val = gridData[i].sol; gridData[i].fixed = true; }
             cages = [];
@@ -234,7 +269,19 @@
             timerId = setInterval(() => { if(!isOver) { timer++; updateTimer(); } }, 1000);
             document.getElementById('effect-canvas').innerHTML = '';
             renderGrid(); renderPad(); updateHearts();
+            adjustBoardSize();
         }
+
+        function adjustBoardSize() {
+            const wrapper = document.querySelector('.app-wrapper');
+            const header = document.querySelector('header');
+            const nav = document.getElementById('nav-wrapper');
+            const controls = document.querySelector('.control-area');
+            const availableHeight = wrapper.clientHeight - header.clientHeight - nav.clientHeight - controls.clientHeight - 80;
+            const size = Math.min(availableHeight, window.innerWidth - 32, 450);
+            document.documentElement.style.setProperty('--board-size', `${size}px`);
+        }
+        window.addEventListener('resize', adjustBoardSize);
 
         function generateKiller(sol) {
             let used = new Set();
@@ -263,7 +310,6 @@
             gridData.forEach((d, i) => {
                 const cell = document.createElement('div');
                 const r = Math.floor(i/9), c = i%9, bIdx = Math.floor(r/3)*3 + Math.floor(c/3);
-                
                 let hClasses = [];
                 if(isOver) hClasses.push("cell-win-flash");
                 else if(d.isGold) hClasses.push("cell-gold-flash");
@@ -272,33 +318,28 @@
                     if(selVal !== 0 && d.val === selVal) hClasses.push("cell-same-num");
                     else if(r === selR || c === selC || bIdx === selB) hClasses.push("cell-related");
                 }
-
                 cell.className = `cell ${d.fixed?'fixed-text':'input-text'} ${d.isError?'error-text':''} ${hClasses.join(' ')}`;
                 if(c===2 || c===5) cell.classList.add('border-r-thick');
                 if(r===2 || r===5) cell.classList.add('border-b-thick');
-                
                 if(currentMode==='killer' && d.cageId!==-1) {
                     const cage = cages[d.cageId];
-                    const fill = document.createElement('div'); fill.className="cage-fill"; fill.style.backgroundColor = cage.color; fill.style.opacity = "0.3";
+                    const fill = document.createElement('div'); fill.className="cage-fill"; fill.style.backgroundColor = cage.color; fill.style.opacity = "0.2";
                     cell.appendChild(fill);
                     const border = document.createElement('div'); border.className = "cage-border-segment";
                     const upId = r>0 ? gridData[i-9].cageId : -1, downId = r<8 ? gridData[i+9].cageId : -1;
                     const leftId = c>0 ? gridData[i-1].cageId : -1, rightId = c<8 ? gridData[i+1].cageId : -1;
-                    if(upId !== d.cageId) border.style.borderTop = "1.5px dashed rgba(0,0,0,0.5)";
-                    if(downId !== d.cageId) border.style.borderBottom = "1.5px dashed rgba(0,0,0,0.5)";
-                    if(leftId !== d.cageId) border.style.borderLeft = "1.5px dashed rgba(0,0,0,0.5)";
-                    if(rightId !== d.cageId) border.style.borderRight = "1.5px dashed rgba(0,0,0,0.5)";
-                    if(document.documentElement.classList.contains('dark')) border.style.borderColor = "rgba(255,255,255,0.4)";
+                    if(upId !== d.cageId) border.style.borderTop = "1px dashed rgba(0,0,0,0.4)";
+                    if(downId !== d.cageId) border.style.borderBottom = "1px dashed rgba(0,0,0,0.4)";
+                    if(leftId !== d.cageId) border.style.borderLeft = "1px dashed rgba(0,0,0,0.4)";
+                    if(rightId !== d.cageId) border.style.borderRight = "1px dashed rgba(0,0,0,0.4)";
                     cell.appendChild(border);
                     if(cage.cells[0]===i) { const s=document.createElement('div'); s.className="cage-sum"; s.innerText=cage.sum; cell.appendChild(s); }
                 }
-                
                 const nGrid = document.createElement('div'); nGrid.className = "notes-grid";
                 if(!d.val && d.notes.length) d.notes.sort((a,b)=>a-b).forEach(n => { const nd=document.createElement('div'); nd.innerText=n; nGrid.appendChild(nd); });
                 cell.appendChild(nGrid);
                 const digit = document.createElement('div'); digit.className = "digit"; digit.innerText = d.val || '';
                 cell.appendChild(digit);
-                
                 cell.onclick = (e) => { e.stopPropagation(); selectedIdx = i; if(activeNum!==null && !d.fixed) handleInput(activeNum); else renderGrid(); };
                 grid.appendChild(cell);
             });
@@ -318,24 +359,18 @@
             renderGrid(); renderPad();
         }
 
-        // 核心：連線與金色特效邏輯
         function checkInstantLine(idx) {
             const r = Math.floor(idx/9), c = idx%9, b = Math.floor(r/3)*3 + Math.floor(c/3);
-            
-            // 橫向劃線
             if(!completedLines.r.includes(r)) {
                 let ok = true; for(let i=0;i<9;i++) if(gridData[r*9+i].val!==gridData[r*9+i].sol) ok=false;
                 if(ok) { completedLines.r.push(r); drawLine('r', r); }
             }
-            // 縱向劃線
             if(!completedLines.c.includes(c)) {
                 let ok = true; for(let i=0;i<9;i++) if(gridData[i*9+c].val!==gridData[i*9+c].sol) ok=false;
                 if(ok) { completedLines.c.push(c); drawLine('c', c); }
             }
-            // 九宮格金色
             if(!completedLines.b.includes(b)) {
-                let ok = true;
-                const br = Math.floor(b/3)*3, bc = (b%3)*3;
+                let ok = true; const br = Math.floor(b/3)*3, bc = (b%3)*3;
                 for(let i=0;i<3;i++) for(let j=0;j<3;j++) if(gridData[(br+i)*9+(bc+j)].val!==gridData[(br+i)*9+(bc+j)].sol) ok=false;
                 if(ok) { 
                     completedLines.b.push(b); 
@@ -347,46 +382,24 @@
                     renderGrid();
                 }
             }
-            // 斜向劃線 (如果是在對角線模式且符合條件)
-            const isDiag1 = idx%10 === 0, isDiag2 = (idx>0 && idx<80 && idx%8 === 0);
-            if(isDiag1 && !completedLines.d.includes(1)) {
-                let ok = true; for(let i=0;i<9;i++) if(gridData[i*10].val!==gridData[i*10].sol) ok=false;
-                if(ok) { completedLines.d.push(1); drawLine('d', 1); }
-            }
-            if(isDiag2 && !completedLines.d.includes(2)) {
-                let ok = true; for(let i=1;i<=9;i++) if(gridData[i*8].val!==gridData[i*8].sol) ok=false;
-                if(ok) { completedLines.d.push(2); drawLine('d', 2); }
-            }
         }
 
         function drawLine(type, index) {
             const svg = document.getElementById('effect-canvas');
             const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
             let x1, y1, x2, y2;
-            const offset = 100/18;
-            const step = 100/9;
-
+            const offset = 100/18, step = 100/9;
             if(type === 'r') { x1=0; x2=100; y1=y2=index*step + offset; }
             else if(type === 'c') { y1=0; y2=100; x1=x2=index*step + offset; }
-            else if(type === 'd') {
-                if(index===1) { x1=y1=0; x2=y2=100; }
-                else { x1=100; y1=0; x2=0; y2=100; }
-            }
-
-            line.setAttribute("x1", x1); line.setAttribute("y1", y1);
-            line.setAttribute("x2", x2); line.setAttribute("y2", y2);
-            line.setAttribute("stroke", "var(--theme-color)");
-            line.setAttribute("stroke-width", "1");
-            line.setAttribute("class", "draw-line");
+            line.setAttribute("x1", x1); line.setAttribute("y1", y1); line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+            line.setAttribute("stroke", "var(--theme-color)"); line.setAttribute("stroke-width", "2"); line.setAttribute("class", "draw-line");
             svg.appendChild(line);
-            setTimeout(() => line.remove(), 1200);
+            setTimeout(() => line.remove(), 1100);
         }
 
         function checkWin() {
             if(gridData.every(g => g.val === g.sol)) { 
-                isOver = true; 
-                clearInterval(timerId); 
-                renderGrid(); 
+                isOver = true; clearInterval(timerId); renderGrid(); 
                 setTimeout(() => initGame(), 1200);
             }
         }
@@ -401,7 +414,6 @@
             const pad = document.getElementById('numpad'); pad.innerHTML = '';
             const counts = {}; for(let i=1; i<=9; i++) counts[i] = 0;
             gridData.forEach(d => { if(d.val === d.sol) counts[d.val]++; });
-
             for(let i=1; i<=9; i++) {
                 const b = document.createElement('button'); b.innerText=i;
                 b.className=`num-btn ${activeNum===i?'active-num':''} ${counts[i]>=9 ? 'num-completed' : ''}`;
